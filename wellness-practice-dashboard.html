@@ -1,0 +1,2517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practice Performance Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
+        :root {
+            --primary: #3F51B5;
+            --primary-dark: #303F9F;
+            --secondary: #8BC34A;
+            --secondary-light: #AED581;
+            --accent-orange: #FF9800;
+            --accent-green: #8BC34A;
+            --accent-red: #E53935;
+            --background: #F5F5F5;
+            --surface: #FFFFFF;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --text-muted: #999999;
+            --border: #E0E0E0;
+            --chart-indigo: #3F51B5;
+            --chart-lime: #8BC34A;
+        }
+
+        body {
+            font-family: 'Open Sans', 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: var(--background);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.4;
+        }
+
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0;
+            width: 100%;
+        }
+
+        /* File Upload Section */
+        .file-upload-section {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .file-upload-section.compact {
+            display: none;
+        }
+
+        .logo-title-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .upload-logo {
+            width: 280px;
+            max-width: 80%;
+            height: auto;
+            margin-bottom: 30px;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+        }
+
+        .upload-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .upload-subtitle {
+            font-size: 18px;
+            opacity: 0.9;
+            margin-bottom: 32px;
+        }
+
+        .upload-area {
+            background: rgba(255,255,255,0.1);
+            border: 2px dashed rgba(255,255,255,0.4);
+            border-radius: 12px;
+            padding: 40px 60px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 24px;
+        }
+
+        .file-upload-section.compact .upload-area {
+            padding: 8px 20px;
+            margin-bottom: 0;
+            border-radius: 6px;
+        }
+
+        .upload-area:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.6);
+        }
+
+        .upload-area.dragover {
+            background: rgba(255,255,255,0.25);
+            border-color: white;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .file-upload-section.compact .upload-icon {
+            font-size: 24px;
+            margin-bottom: 0;
+            margin-right: 8px;
+        }
+
+        .upload-text {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .file-upload-section.compact .upload-text {
+            font-size: 14px;
+        }
+
+        .upload-hint {
+            font-size: 14px;
+            opacity: 0.7;
+            margin-top: 8px;
+        }
+
+        .file-upload-section.compact .upload-hint {
+            display: none;
+        }
+
+        .upload-instructions {
+            max-width: 500px;
+            text-align: left;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .upload-instructions h3 {
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .upload-instructions ol {
+            margin-left: 20px;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .current-file {
+            font-size: 14px;
+            opacity: 0.9;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .current-file-name {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        /* Dashboard Banner */
+        .dashboard-banner {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 24px;
+            text-align: center;
+        }
+
+        .dashboard-banner-logo {
+            width: 280px;
+            max-width: 80%;
+            height: auto;
+            margin-bottom: 12px;
+        }
+
+        .dashboard-banner-title {
+            color: white;
+            font-size: 20px;
+            font-weight: 600;
+            opacity: 0.95;
+        }
+
+        /* Header */
+        .header {
+            background: var(--surface);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .last-updated {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .header-center {
+            display: flex;
+            align-items: center;
+        }
+
+        .period-toggle {
+            display: flex;
+            background: var(--background);
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .period-btn {
+            padding: 8px 24px;
+            border: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-secondary);
+        }
+
+        .period-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .period-btn:hover:not(.active) {
+            background: var(--border);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .month-select {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 13px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .load-new-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--accent-orange);
+            border-radius: 4px;
+            background: white;
+            color: var(--accent-orange);
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .load-new-btn:hover {
+            background: var(--accent-orange);
+            color: white;
+        }
+
+        #refreshData:hover {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .filter-select {
+            padding: 6px 10px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 12px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .header-filters {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        /* Change badge with tooltip */
+        .change-badge {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: help;
+        }
+
+        .change-badge .tooltip {
+            visibility: hidden;
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            white-space: nowrap;
+            z-index: 100;
+            margin-bottom: 6px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            max-width: 300px;
+            text-align: center;
+        }
+
+        .change-badge .tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: #333;
+        }
+
+        .change-badge:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 1000px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--surface);
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: #F8F8F8;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            font-weight: 700;
+            font-size: 15px;
+            color: var(--text-primary);
+            text-align: center;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        /* Revenue Comparison Section */
+        .revenue-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+        }
+
+        .revenue-period {
+            padding: 16px;
+            text-align: center;
+            position: relative;
+        }
+
+        .revenue-period.previous {
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-light) 100%);
+            color: white;
+        }
+
+        .revenue-period.previous .period-label {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .revenue-period.current {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+            color: white;
+        }
+
+        .revenue-period.current .period-label {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .period-label {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .donut-container {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            margin: 0 auto 12px;
+        }
+
+        .donut-canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .donut-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .donut-icon {
+            font-size: 28px;
+            margin-bottom: 4px;
+        }
+
+        .donut-labels {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-top: 8px;
+            font-size: 12px;
+        }
+
+        .donut-label-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .donut-label-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .change-indicator {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .change-badge {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .change-badge.up {
+            background: var(--accent-green);
+            color: white;
+        }
+
+        .change-badge.down {
+            background: var(--accent-red);
+            color: white;
+        }
+
+        .change-arrow {
+            font-size: 14px;
+        }
+
+        .mtd-total {
+            font-size: 14px;
+            margin-top: 8px;
+            opacity: 0.9;
+        }
+
+        .mtd-total strong {
+            font-size: 18px;
+        }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .metric-card {
+            background: var(--surface);
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 16px;
+        }
+
+        .metric-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        .metric-chart {
+            height: 120px;
+            position: relative;
+        }
+
+        /* Right Column */
+        .right-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Receivables Donut */
+        .receivables-donut {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin: 0 auto;
+        }
+
+        .receivables-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .receivables-legend {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            margin-top: 16px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .legend-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .legend-icon.insurance {
+            background: #3F51B5;
+            color: white;
+        }
+
+        .legend-icon.patient {
+            background: #8BC34A;
+            color: white;
+        }
+
+        .receivables-total {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .receivables-total strong {
+            font-size: 20px;
+            color: var(--text-primary);
+        }
+
+        /* Provider Performance */
+        .provider-chart {
+            height: 200px;
+        }
+
+        /* Trend Chart */
+        .trend-tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 16px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .trend-tab {
+            padding: 8px 16px;
+            border: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--text-muted);
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.2s;
+        }
+
+        .trend-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .trend-chart {
+            height: 180px;
+        }
+
+        /* Bottom Row */
+        .bottom-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .bottom-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 16px;
+            color: var(--text-muted);
+            font-size: 12px;
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            margin-top: 20px;
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: var(--text-muted);
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #FFEBEE;
+            color: #C62828;
+            padding: 16px;
+            border-radius: 4px;
+            margin: 20px;
+            text-align: center;
+        }
+
+        /* Drilldown Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            background: var(--primary);
+            color: white;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            opacity: 0.8;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .drilldown-section {
+            margin-bottom: 20px;
+        }
+
+        .drilldown-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .drilldown-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .drilldown-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .drilldown-subvalue {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .drilldown-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .drilldown-item {
+            background: var(--background);
+            padding: 12px;
+            border-radius: 6px;
+        }
+
+        .drilldown-item-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .drilldown-item-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .drilldown-item-change {
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .drilldown-item-change.up {
+            color: var(--accent-green);
+        }
+
+        .drilldown-item-change.down {
+            color: var(--accent-red);
+        }
+
+        .drilldown-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .drilldown-table th {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 2px solid var(--border);
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .drilldown-table td {
+            padding: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .drilldown-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .metric-card {
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .clickable-card {
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .clickable-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .click-hint {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container" id="dashboard">
+        <!-- Initial file upload screen -->
+        <div class="file-upload-section" id="uploadSection">
+            <div class="logo-title-wrapper">
+                <img src="https://hormonesandwellness.com/wp-content/uploads/2021/02/FCHW_NEWLOGO2018.png" alt="Florida Center for Hormones & Wellness" class="upload-logo">
+                <h1 class="upload-title">Practice Performance Dashboard</h1>
+            </div>
+            <p class="upload-subtitle">Load your Excel workbook to view your practice metrics</p>
+
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📊</div>
+                <div class="upload-text">Click to select Excel file or drag & drop</div>
+                <div class="upload-hint">Supports .xlsx and .xls files</div>
+            </div>
+            <input type="file" id="fileInput" class="file-input" accept=".xlsx,.xls">
+
+            <div class="upload-instructions">
+                <h3>Quick Start:</h3>
+                <ol>
+                    <li>Download the template: <strong>practice-dashboard-data.xlsx</strong></li>
+                    <li>Enter your practice data in the Excel sheets</li>
+                    <li>Save the file and upload it here</li>
+                    <li>Your dashboard will update automatically</li>
+                </ol>
+            </div>
+        </div>
+
+        <div id="dashboardContent" style="display:none;">
+            <!-- Dashboard content rendered by JavaScript -->
+        </div>
+
+        <!-- Drilldown Modal -->
+        <div class="modal-overlay" id="drilldownModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title" id="modalTitle">Details</div>
+                    <button class="modal-close" id="modalClose">&times;</button>
+                </div>
+                <div class="modal-body" id="modalBody">
+                    <!-- Content injected by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // EXCEL DATA PARSER AND DASHBOARD RENDERER
+        // ============================================================
+
+        // ============================================================
+        // CONFIGURATION - SET YOUR GITHUB EXCEL URL HERE
+        // ============================================================
+        // Set the raw GitHub URL to your Excel file:
+        // Format: https://raw.githubusercontent.com/USERNAME/REPO/main/FILENAME.xlsx
+        // Example: "https://raw.githubusercontent.com/johndoe/practice-dashboard/main/practice-data.xlsx"
+        // Leave empty ('') to use manual file upload instead
+        var EXCEL_DATA_URL = '';
+        // ============================================================
+
+        var PRACTICE_CONFIG = {
+            practiceName: "Florida Center for Hormones & Wellness",
+            practiceSubtitle: "HORMONAL & WELLNESS PRACTICE",
+            logoUrl: "https://hormonesandwellness.com/wp-content/uploads/2021/02/FCHW_NEWLOGO2018.png",
+            logoInitials: "FCHW"
+        };
+
+        var DASHBOARD_DATA = {};
+        var selectedMonth = '';
+        var viewMode = 'monthly';
+        var trendFilter = 'all';
+        var charts = {};
+        var currentFileName = '';
+
+        // Check for saved data on page load
+        function loadSavedData() {
+            try {
+                var savedData = localStorage.getItem('dashboardData');
+                var savedConfig = localStorage.getItem('practiceConfig');
+                var savedFileName = localStorage.getItem('fileName');
+                var savedMonth = localStorage.getItem('selectedMonth');
+
+                if (savedData) {
+                    DASHBOARD_DATA = JSON.parse(savedData);
+                    if (savedConfig) {
+                        var config = JSON.parse(savedConfig);
+                        PRACTICE_CONFIG.practiceName = config.practiceName || PRACTICE_CONFIG.practiceName;
+                        PRACTICE_CONFIG.logoInitials = config.logoInitials || PRACTICE_CONFIG.logoInitials;
+                        PRACTICE_CONFIG.logoUrl = config.logoUrl || PRACTICE_CONFIG.logoUrl;
+                    }
+                    currentFileName = savedFileName || 'Saved Data';
+
+                    var months = Object.keys(DASHBOARD_DATA).sort(function(a, b) {
+                        return new Date(a) - new Date(b);
+                    });
+
+                    if (months.length > 0) {
+                        selectedMonth = savedMonth && DASHBOARD_DATA[savedMonth] ? savedMonth : months[months.length - 1];
+                        document.getElementById('uploadSection').classList.add('compact');
+                        document.getElementById('dashboardContent').style.display = 'block';
+                        renderDashboard();
+                        return true;
+                    }
+                }
+            } catch (e) {
+                console.error('Error loading saved data:', e);
+            }
+            return false;
+        }
+
+        function saveData() {
+            try {
+                localStorage.setItem('dashboardData', JSON.stringify(DASHBOARD_DATA));
+                localStorage.setItem('practiceConfig', JSON.stringify(PRACTICE_CONFIG));
+                localStorage.setItem('fileName', currentFileName);
+                localStorage.setItem('selectedMonth', selectedMonth);
+            } catch (e) {
+                console.error('Error saving data:', e);
+            }
+        }
+
+        function clearSavedData() {
+            localStorage.removeItem('dashboardData');
+            localStorage.removeItem('practiceConfig');
+            localStorage.removeItem('fileName');
+            localStorage.removeItem('selectedMonth');
+            location.reload();
+        }
+
+        // Load Excel from SharePoint URL
+        function loadExcelFromUrl(url) {
+            var uploadSection = document.getElementById('uploadSection');
+            var uploadText = document.querySelector('.upload-text');
+            var uploadHint = document.querySelector('.upload-hint');
+
+            if (uploadText) uploadText.textContent = 'Loading data from SharePoint...';
+            if (uploadHint) uploadHint.textContent = 'Please wait';
+
+            fetch(url)
+                .then(function(response) {
+                    if (!response.ok) {
+                        throw new Error('Failed to load Excel file (Status: ' + response.status + ')');
+                    }
+                    return response.arrayBuffer();
+                })
+                .then(function(buffer) {
+                    try {
+                        var data = new Uint8Array(buffer);
+                        var workbook = XLSX.read(data, { type: 'array' });
+                        currentFileName = url.split('/').pop() || 'SharePoint Data';
+                        parseWorkbook(workbook);
+                    } catch (error) {
+                        throw new Error('Error parsing Excel file: ' + error.message);
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Error loading Excel from URL:', error);
+                    if (uploadText) uploadText.textContent = 'Auto-load failed. Click to select Excel file or drag & drop';
+                    if (uploadHint) uploadHint.textContent = 'Error: ' + error.message + ' - You can manually upload the file instead';
+                });
+        }
+
+        // Drilldown Modal Functions
+        function showDrilldown(title, content) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalBody').innerHTML = content;
+            document.getElementById('drilldownModal').classList.add('active');
+        }
+
+        function closeDrilldown() {
+            document.getElementById('drilldownModal').classList.remove('active');
+        }
+
+        // Set up modal close handlers
+        document.getElementById('modalClose').addEventListener('click', closeDrilldown);
+        document.getElementById('drilldownModal').addEventListener('click', function(e) {
+            if (e.target === this) closeDrilldown();
+        });
+
+        function getChangeHtml(current, previous) {
+            if (!previous || previous === 0) return '';
+            var change = ((current - previous) / previous) * 100;
+            var isUp = change >= 0;
+            return '<div class="drilldown-item-change ' + (isUp ? 'up' : 'down') + '">' +
+                (isUp ? '▲' : '▼') + ' ' + Math.abs(change).toFixed(1) + '% vs last year</div>';
+        }
+
+        function getHistoricalData(metricFn) {
+            var months = Object.keys(DASHBOARD_DATA).sort(function(a, b) {
+                return new Date(a) - new Date(b);
+            });
+            return months.map(function(m) {
+                return { month: m, value: metricFn(DASHBOARD_DATA[m]) };
+            });
+        }
+
+        function showRevenuePerVisitDrilldown() {
+            var data = DASHBOARD_DATA[selectedMonth];
+            var prevYearMonth = getPreviousYearMonth(selectedMonth);
+            var prevData = DASHBOARD_DATA[prevYearMonth];
+
+            var totalRevenue = data.consultationRevenue + data.treatmentRevenue;
+            var rpv = totalRevenue / data.totalAppointments;
+            var prevRpv = prevData ? (prevData.consultationRevenue + prevData.treatmentRevenue) / prevData.totalAppointments : null;
+
+            var content = '<div class="drilldown-section">' +
+                '<div class="drilldown-label">Revenue Per Visit - ' + selectedMonth + '</div>' +
+                '<div class="drilldown-value">' + formatCurrencyFull(rpv) + '</div>' +
+                '<div class="drilldown-subvalue">Goal: ' + formatCurrencyFull(data.revenuePerVisitGoal) + '</div>' +
+                (prevRpv ? '<div class="drilldown-subvalue">Last Year: ' + formatCurrencyFull(prevRpv) + '</div>' : '') +
+            '</div>' +
+            '<div class="drilldown-section">' +
+                '<div class="drilldown-label">Current Month Breakdown</div>' +
+                '<div class="drilldown-grid">' +
+                    '<div class="drilldown-item">' +
+                        '<div class="drilldown-item-label">Total Revenue</div>' +
+                        '<div class="drilldown-item-value">' + formatCurrencyFull(totalRevenue) + '</div>' +
+                    '</div>' +
+                    '<div class="drilldown-item">' +
+                        '<div class="drilldown-item-label">Total Visits</div>' +
+                        '<div class="drilldown-item-value">' + data.totalAppointments + '</div>' +
+                    '</div>' +
+                    '<div class="drilldown-item">' +
+                        '<div class="drilldown-item-label">Consultation Rev</div>' +
+                        '<div class="drilldown-item-value">' + formatCurrencyFull(data.consultationRevenue) + '</div>' +
+                    '</div>' +
+                    '<div class="drilldown-item">' +
+                        '<div class="drilldown-item-label">Treatment Rev</div>' +
+                        '<div class="drilldown-item-value">' + formatCurrencyFull(data.treatmentRevenue) + '</div>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+
+            // Historical trend table
+            var history = getHistoricalData(function(d) {
+                return d.totalAppointments > 0 ? (d.consultationRevenue + d.treatmentRevenue) / d.totalAppointments : 0;
+            });
+            content += '<div class="drilldown-section">' +
+                '<div class="drilldown-label">Historical Trend</div>' +
+                '<table class="drilldown-table">' +
+                    '<tr><th>Month</th><th>Revenue</th><th>Visits</th><th>Rev/Visit</th></tr>';
+            history.forEach(function(h) {
+                var d = DASHBOARD_DATA[h.month];
+                var rev = d.consultationRevenue + d.treatmentRevenue;
+                var isCurrentMonth = h.month === selectedMonth;
+                content += '<tr style="' + (isCurrentMonth ? 'background:#e8eaf6;font-weight:600;' : '') + '">' +
+                    '<td>' + h.month + '</td>' +
+                    '<td>' + formatCurrencyFull(rev) + '</td>' +
+                    '<td>' + d.totalAppointments + '</td>' +
+                    '<td>' + formatCurrencyFull(h.value) + '</td></tr>';
+            });
+            content += '</table></div>';
+
+            if (data.providers && data.providers.length > 0) {
+                var totalProviderVisits = data.providers.reduce(function(sum, p) { return sum + p.visits; }, 0);
+                content += '<div class="drilldown-section">' +
+                    '<div class="drilldown-label">Visits by Provider - ' + selectedMonth + '</div>' +
+                    '<table class="drilldown-table">' +
+                        '<tr><th>Provider</th><th>Visits</th><th>% of Total</th></tr>';
+                data.providers.forEach(function(p) {
+                    var pctOfTotal = totalProviderVisits > 0 ? (p.visits / totalProviderVisits * 100) : 0;
+                    content += '<tr><td>' + p.name + '</td><td>' + p.visits + '</td><td>' + pctOfTotal.toFixed(1) + '%</td></tr>';
+                });
+                content += '</table></div>';
+            }
+
+            showDrilldown('Revenue Per Visit Details', content);
+        }
+
+        function showLeadConversionDrilldown() {
+            var data = DASHBOARD_DATA[selectedMonth];
+            var prevYearMonth = getPreviousYearMonth(selectedMonth);
+            var prevData = DASHBOARD_DATA[prevYearMonth];
+
+            var conversionRate = data.newPatientLeads > 0 ? (data.scheduledFromLeads / data.newPatientLeads) * 100 : 0;
+            var prevRate = prevData && prevData.newPatientLeads > 0 ? (prevData.scheduledFromLeads / prevData.newPatientLeads) * 100 : null;
+
+            var content = '<div class="drilldown-section">' +
+                '<div class="drilldown-label">Lead Conversion Rate - ' + selectedMonth + '</div>' +
+                '<div class="drilldown-value">' + conversionRate.toFixed(1) + '%</div>' +
+                '<div class="drilldown-subvalue">Goal: ' + data.leadConversionGoal + '%</div>' +
+                (prevRate !== null ? '<div class="drilldown-subvalue">Last Year: ' + prevRate.toFixed(1) + '%</div>' : '') +
+            '</div>' +
+            '<div class="drilldown-section">' +
+                '<div class="drilldown-label">Current Month Funnel</div>' +
+                '<div class="drilldown-grid">' +
+                    '<div class="drilldown-item">' +
+                        '<div class="drilldown-item-label">New Patient Leads</div>' +
+                        '<div class="drilldown-item-value">' + data.newPatientLeads + '</div>' +
+                    '</div>' +
+                    '<div class="drilldown-item">' +
+                        '<div class="drilldown-item-label">Scheduled</div>' +
+                        '<div class="drilldown-item-value">' + data.scheduledFromLeads + '</div>' +
+                    '</div>' +
+                    '<div class="drilldown-item">' +
+                        '<div class="drilldown-item-label">Not Converted</div>' +
+                        '<div class="drilldown-item-value">' + (data.newPatientLeads - data.scheduledFromLeads) + '</div>' +
+                    '</div>' +
+                    '<div class="drilldown-item">' +
+                        '<div class="drilldown-item-label">Active Patients</div>' +
+                        '<div class="drilldown-item-value">' + data.activePatients + '</div>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+
+            // Historical trend table
+            var history = getHistoricalData(function(d) {
+                return d.newPatientLeads > 0 ? (d.scheduledFromLeads / d.newPatientLeads) * 100 : 0;
+            });
+            content += '<div class="drilldown-section">' +
+                '<div class="drilldown-label">Historical Trend</div>' +
+                '<table class="drilldown-table">' +
+                    '<tr><th>Month</th><th>Leads</th><th>Scheduled</th><th>Conversion</th><th>Active Patients</th></tr>';
+            history.forEach(function(h) {
+                var d = DASHBOARD_DATA[h.month];
+                var isCurrentMonth = h.month === selectedMonth;
+                content += '<tr style="' + (isCurrentMonth ? 'background:#e8eaf6;font-weight:600;' : '') + '">' +
+                    '<td>' + h.month + '</td>' +
+                    '<td>' + d.newPatientLeads + '</td>' +
+                    '<td>' + d.scheduledFromLeads + '</td>' +
+                    '<td>' + h.value.toFixed(1) + '%</td>' +
+                    '<td>' + d.activePatients + '</td></tr>';
+            });
+            content += '</table></div>';
+
+            showDrilldown('Lead Conversion Details', content);
+        }
+
+        function showAppointmentsDrilldown() {
+            var data = DASHBOARD_DATA[selectedMonth];
+            var prevYearMonth = getPreviousYearMonth(selectedMonth);
+            var prevData = DASHBOARD_DATA[prevYearMonth];
+
+            var completed = data.totalAppointments - data.noShows - data.cancellations;
+            var completionRate = data.totalAppointments > 0 ? (completed / data.totalAppointments) * 100 : 0;
+
+            var content = '<div class="drilldown-section">' +
+                '<div class="drilldown-label">Appointments - ' + selectedMonth + '</div>' +
+                '<div class="drilldown-value">' + completed + ' Completed</div>' +
+                '<div class="drilldown-subvalue">of ' + data.totalAppointments + ' total (' + completionRate.toFixed(1) + '% completion rate)</div>' +
+            '</div>' +
+            '<div class="drilldown-section">' +
+                '<div class="drilldown-label">Current Month Breakdown</div>' +
+                '<div class="drilldown-grid">' +
+                    '<div class="drilldown-item">' +
+                        '<div class="drilldown-item-label">Total Scheduled</div>' +
+                        '<div class="drilldown-item-value">' + data.totalAppointments + '</div>' +
+                    '</div>' +
+                    '<div class="drilldown-item">' +
+                        '<div class="drilldown-item-label">Completed</div>' +
+                        '<div class="drilldown-item-value">' + completed + '</div>' +
+                    '</div>' +
+                    '<div class="drilldown-item">' +
+                        '<div class="drilldown-item-label">No Shows</div>' +
+                        '<div class="drilldown-item-value" style="color:var(--accent-red)">' + data.noShows + '</div>' +
+                    '</div>' +
+                    '<div class="drilldown-item">' +
+                        '<div class="drilldown-item-label">Cancellations</div>' +
+                        '<div class="drilldown-item-value" style="color:var(--accent-orange)">' + data.cancellations + '</div>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+
+            // Historical trend table
+            content += '<div class="drilldown-section">' +
+                '<div class="drilldown-label">Historical Trend</div>' +
+                '<table class="drilldown-table">' +
+                    '<tr><th>Month</th><th>Total</th><th>Completed</th><th>No Shows</th><th>Cancelled</th><th>Rate</th></tr>';
+            var months = Object.keys(DASHBOARD_DATA).sort(function(a, b) { return new Date(a) - new Date(b); });
+            months.forEach(function(m) {
+                var d = DASHBOARD_DATA[m];
+                var comp = d.totalAppointments - d.noShows - d.cancellations;
+                var rate = d.totalAppointments > 0 ? (comp / d.totalAppointments) * 100 : 0;
+                var isCurrentMonth = m === selectedMonth;
+                content += '<tr style="' + (isCurrentMonth ? 'background:#e8eaf6;font-weight:600;' : '') + '">' +
+                    '<td>' + m + '</td>' +
+                    '<td>' + d.totalAppointments + '</td>' +
+                    '<td>' + comp + '</td>' +
+                    '<td>' + d.noShows + '</td>' +
+                    '<td>' + d.cancellations + '</td>' +
+                    '<td>' + rate.toFixed(1) + '%</td></tr>';
+            });
+            content += '</table></div>';
+
+            if (data.providers && data.providers.length > 0) {
+                content += '<div class="drilldown-section">' +
+                    '<div class="drilldown-label">By Provider - ' + selectedMonth + '</div>' +
+                    '<table class="drilldown-table">' +
+                        '<tr><th>Provider</th><th>Visits</th><th>Utilization</th></tr>';
+                data.providers.forEach(function(p) {
+                    content += '<tr><td>' + p.name + '</td><td>' + p.visits + '</td><td>' + p.utilization + '%</td></tr>';
+                });
+                content += '</table></div>';
+            }
+
+            showDrilldown('Appointments Details', content);
+        }
+
+        function showNoShowsDrilldown() {
+            var data = DASHBOARD_DATA[selectedMonth];
+            var prevYearMonth = getPreviousYearMonth(selectedMonth);
+            var prevData = DASHBOARD_DATA[prevYearMonth];
+
+            var noShowRate = data.totalAppointments > 0 ? (data.noShows / data.totalAppointments) * 100 : 0;
+            var cancelRate = data.totalAppointments > 0 ? (data.cancellations / data.totalAppointments) * 100 : 0;
+            var totalLost = data.noShows + data.cancellations;
+            var avgRevPerVisit = data.totalAppointments > 0 ? (data.consultationRevenue + data.treatmentRevenue) / data.totalAppointments : 0;
+            var estimatedLostRevenue = totalLost * avgRevPerVisit;
+
+            var content = '<div class="drilldown-section">' +
+                '<div class="drilldown-label">Lost Appointments - ' + selectedMonth + '</div>' +
+                '<div class="drilldown-value">' + totalLost + ' Total</div>' +
+                '<div class="drilldown-subvalue">Estimated Lost Revenue: ' + formatCurrencyFull(estimatedLostRevenue) + '</div>' +
+            '</div>' +
+            '<div class="drilldown-section">' +
+                '<div class="drilldown-label">Current Month Breakdown</div>' +
+                '<div class="drilldown-grid">' +
+                    '<div class="drilldown-item">' +
+                        '<div class="drilldown-item-label">No Shows</div>' +
+                        '<div class="drilldown-item-value" style="color:var(--accent-red)">' + data.noShows + '</div>' +
+                        '<div class="drilldown-subvalue">' + noShowRate.toFixed(1) + '% rate</div>' +
+                    '</div>' +
+                    '<div class="drilldown-item">' +
+                        '<div class="drilldown-item-label">Cancellations</div>' +
+                        '<div class="drilldown-item-value" style="color:var(--accent-orange)">' + data.cancellations + '</div>' +
+                        '<div class="drilldown-subvalue">' + cancelRate.toFixed(1) + '% rate</div>' +
+                    '</div>' +
+                    '<div class="drilldown-item">' +
+                        '<div class="drilldown-item-label">No Show Goal</div>' +
+                        '<div class="drilldown-item-value">&lt;' + data.noShowGoal + '</div>' +
+                        '<div class="drilldown-subvalue">' + (data.noShows <= data.noShowGoal ? '✓ On target' : '✗ Over goal') + '</div>' +
+                    '</div>' +
+                    '<div class="drilldown-item">' +
+                        '<div class="drilldown-item-label">Est. Lost Revenue</div>' +
+                        '<div class="drilldown-item-value">' + formatCurrencyFull(estimatedLostRevenue) + '</div>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+
+            // Historical trend table
+            content += '<div class="drilldown-section">' +
+                '<div class="drilldown-label">Historical Trend</div>' +
+                '<table class="drilldown-table">' +
+                    '<tr><th>Month</th><th>No Shows</th><th>NS Rate</th><th>Cancels</th><th>Cancel Rate</th><th>Est. Lost Rev</th></tr>';
+            var months = Object.keys(DASHBOARD_DATA).sort(function(a, b) { return new Date(a) - new Date(b); });
+            months.forEach(function(m) {
+                var d = DASHBOARD_DATA[m];
+                var nsRate = d.totalAppointments > 0 ? (d.noShows / d.totalAppointments) * 100 : 0;
+                var cRate = d.totalAppointments > 0 ? (d.cancellations / d.totalAppointments) * 100 : 0;
+                var avgRpv = d.totalAppointments > 0 ? (d.consultationRevenue + d.treatmentRevenue) / d.totalAppointments : 0;
+                var lostRev = (d.noShows + d.cancellations) * avgRpv;
+                var isCurrentMonth = m === selectedMonth;
+                content += '<tr style="' + (isCurrentMonth ? 'background:#e8eaf6;font-weight:600;' : '') + '">' +
+                    '<td>' + m + '</td>' +
+                    '<td>' + d.noShows + '</td>' +
+                    '<td>' + nsRate.toFixed(1) + '%</td>' +
+                    '<td>' + d.cancellations + '</td>' +
+                    '<td>' + cRate.toFixed(1) + '%</td>' +
+                    '<td>' + formatCurrencyFull(lostRev) + '</td></tr>';
+            });
+            content += '</table></div>';
+
+            showDrilldown('No Shows & Cancellations Details', content);
+        }
+
+        function showReceivablesDrilldown() {
+            var data = DASHBOARD_DATA[selectedMonth];
+            var prevYearMonth = getPreviousYearMonth(selectedMonth);
+            var prevData = DASHBOARD_DATA[prevYearMonth];
+
+            var total = data.insuranceReceivables + data.patientReceivables;
+            var insurancePct = total > 0 ? (data.insuranceReceivables / total) * 100 : 0;
+            var patientPct = total > 0 ? (data.patientReceivables / total) * 100 : 0;
+
+            var content = '<div class="drilldown-section">' +
+                '<div class="drilldown-label">Total Outstanding - ' + selectedMonth + '</div>' +
+                '<div class="drilldown-value">' + formatCurrencyFull(total) + '</div>' +
+                (prevData ? '<div class="drilldown-subvalue">Last Year: ' + formatCurrencyFull(prevData.insuranceReceivables + prevData.patientReceivables) + '</div>' : '') +
+            '</div>' +
+            '<div class="drilldown-section">' +
+                '<div class="drilldown-label">Current Month Breakdown</div>' +
+                '<div class="drilldown-grid">' +
+                    '<div class="drilldown-item">' +
+                        '<div class="drilldown-item-label">Insurance A/R</div>' +
+                        '<div class="drilldown-item-value">' + formatCurrencyFull(data.insuranceReceivables) + '</div>' +
+                        '<div class="drilldown-subvalue">' + insurancePct.toFixed(1) + '% of total</div>' +
+                    '</div>' +
+                    '<div class="drilldown-item">' +
+                        '<div class="drilldown-item-label">Patient A/R</div>' +
+                        '<div class="drilldown-item-value">' + formatCurrencyFull(data.patientReceivables) + '</div>' +
+                        '<div class="drilldown-subvalue">' + patientPct.toFixed(1) + '% of total</div>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+
+            // Historical trend table
+            content += '<div class="drilldown-section">' +
+                '<div class="drilldown-label">Historical Trend</div>' +
+                '<table class="drilldown-table">' +
+                    '<tr><th>Month</th><th>Insurance A/R</th><th>Patient A/R</th><th>Total</th></tr>';
+            var months = Object.keys(DASHBOARD_DATA).sort(function(a, b) { return new Date(a) - new Date(b); });
+            months.forEach(function(m) {
+                var d = DASHBOARD_DATA[m];
+                var tot = d.insuranceReceivables + d.patientReceivables;
+                var isCurrentMonth = m === selectedMonth;
+                content += '<tr style="' + (isCurrentMonth ? 'background:#e8eaf6;font-weight:600;' : '') + '">' +
+                    '<td>' + m + '</td>' +
+                    '<td>' + formatCurrencyFull(d.insuranceReceivables) + '</td>' +
+                    '<td>' + formatCurrencyFull(d.patientReceivables) + '</td>' +
+                    '<td>' + formatCurrencyFull(tot) + '</td></tr>';
+            });
+            content += '</table></div>';
+
+            showDrilldown('Outstanding Receivables Details', content);
+        }
+
+        function showProviderDrilldown(providerName) {
+            var data = DASHBOARD_DATA[selectedMonth];
+            var prevYearMonth = getPreviousYearMonth(selectedMonth);
+            var prevData = DASHBOARD_DATA[prevYearMonth];
+
+            if (!data.providers || data.providers.length === 0) {
+                showDrilldown('Provider Details', '<p>No provider data available.</p>');
+                return;
+            }
+
+            var totalVisits = data.providers.reduce(function(sum, p) { return sum + p.visits; }, 0);
+
+            // Calculate practice-level appointment breakdown
+            var practiceTotal = data.totalAppointments || 0;
+            var practiceCompleted = practiceTotal - (data.noShows || 0) - (data.cancellations || 0);
+
+            // Find the clicked provider's current data
+            var clickedProvider = providerName ? data.providers.find(function(p) { return p.name === providerName; }) : null;
+
+            var content = '';
+
+            // If a specific provider was clicked, show their details first
+            if (clickedProvider) {
+                var pctOfTotalVisits = totalVisits > 0 ? (clickedProvider.visits / totalVisits) * 100 : 0;
+
+                content += '<div class="drilldown-section" style="background:#e8f5e9;padding:16px;border-radius:8px;margin-bottom:20px;">' +
+                    '<div class="drilldown-label" style="color:#2e7d32;">' + clickedProvider.name + ' - ' + selectedMonth + '</div>' +
+                    '<div class="drilldown-value" style="font-size:32px;">' + clickedProvider.visits + ' <span style="font-size:16px;font-weight:normal;">total visits</span></div>' +
+                    '<div class="drilldown-subvalue">' + clickedProvider.role + '</div>' +
+                    '<div class="drilldown-grid" style="margin-top:12px;">' +
+                        '<div class="drilldown-item" style="background:white;">' +
+                            '<div class="drilldown-item-label">% of Total Visits</div>' +
+                            '<div class="drilldown-item-value">' + pctOfTotalVisits.toFixed(1) + '%</div>' +
+                        '</div>' +
+                        '<div class="drilldown-item" style="background:white;">' +
+                            '<div class="drilldown-item-label">Utilization</div>' +
+                            '<div class="drilldown-item-value">' + clickedProvider.utilization + '%</div>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
+
+                // Historical trend for THIS provider only
+                content += '<div class="drilldown-section">' +
+                    '<div class="drilldown-label">' + clickedProvider.name + ' - Historical Visits</div>' +
+                    '<table class="drilldown-table">' +
+                        '<tr><th>Month</th><th>Visits</th><th>Utilization</th></tr>';
+
+                var months = Object.keys(DASHBOARD_DATA).sort(function(a, b) { return new Date(a) - new Date(b); });
+                months.forEach(function(m) {
+                    var d = DASHBOARD_DATA[m];
+                    var provider = d.providers ? d.providers.find(function(p) { return p.name === providerName; }) : null;
+                    if (provider) {
+                        var isCurrentMonth = m === selectedMonth;
+                        content += '<tr style="' + (isCurrentMonth ? 'background:#e8f5e9;font-weight:600;' : '') + '">' +
+                            '<td>' + m + '</td>' +
+                            '<td>' + provider.visits + '</td>' +
+                            '<td>' + provider.utilization + '%</td></tr>';
+                    }
+                });
+                content += '</table></div>';
+            }
+
+            // Practice-wide appointment summary
+            content += '<div class="drilldown-section" style="background:#e8eaf6;padding:16px;border-radius:8px;margin-bottom:20px;">' +
+                '<div class="drilldown-label" style="color:#3949ab;">Practice Appointment Summary - ' + selectedMonth + '</div>' +
+                '<div class="drilldown-grid" style="margin-top:12px;">' +
+                    '<div class="drilldown-item" style="background:white;">' +
+                        '<div class="drilldown-item-label">Total Scheduled</div>' +
+                        '<div class="drilldown-item-value">' + practiceTotal + '</div>' +
+                    '</div>' +
+                    '<div class="drilldown-item" style="background:white;">' +
+                        '<div class="drilldown-item-label">Completed</div>' +
+                        '<div class="drilldown-item-value" style="color:#7cb342;">' + practiceCompleted + '</div>' +
+                    '</div>' +
+                    '<div class="drilldown-item" style="background:white;">' +
+                        '<div class="drilldown-item-label">Cancelled</div>' +
+                        '<div class="drilldown-item-value" style="color:#ff9800;">' + (data.cancellations || 0) + '</div>' +
+                    '</div>' +
+                    '<div class="drilldown-item" style="background:white;">' +
+                        '<div class="drilldown-item-label">No Shows</div>' +
+                        '<div class="drilldown-item-value" style="color:#e53935;">' + (data.noShows || 0) + '</div>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+
+            // Provider comparison summary (all providers)
+            content += '<div class="drilldown-section">' +
+                '<div class="drilldown-label">All Providers Comparison - ' + selectedMonth + '</div>' +
+                '<table class="drilldown-table">' +
+                    '<tr><th>Provider</th><th>Visits</th><th>% of Total</th><th>Utilization</th></tr>';
+
+            data.providers.forEach(function(p) {
+                var pctOfTotal = totalVisits > 0 ? (p.visits / totalVisits) * 100 : 0;
+                var isHighlighted = providerName && p.name === providerName;
+                content += '<tr style="' + (isHighlighted ? 'background:#e8f5e9;font-weight:600;' : '') + '">' +
+                    '<td>' + p.name + '</td>' +
+                    '<td>' + p.visits + '</td>' +
+                    '<td>' + pctOfTotal.toFixed(1) + '%</td>' +
+                    '<td>' + p.utilization + '%</td></tr>';
+            });
+            content += '</table>' +
+                '<div style="font-size:11px;color:#666;margin-top:8px;">Total Visits: ' + totalVisits + '</div>' +
+            '</div>';
+
+            var title = providerName ? providerName + ' - Visit Details' : 'Visits by Provider';
+            showDrilldown(title, content);
+        }
+
+        // Try to load data on page start
+        if (!loadSavedData()) {
+            // No saved data - check if we should auto-load from SharePoint URL
+            if (EXCEL_DATA_URL && EXCEL_DATA_URL.trim() !== '') {
+                loadExcelFromUrl(EXCEL_DATA_URL);
+            }
+            // Otherwise, user will need to manually upload file
+        }
+
+        // File upload handling
+        var uploadArea = document.getElementById('uploadArea');
+        var fileInput = document.getElementById('fileInput');
+
+        uploadArea.addEventListener('click', function() {
+            fileInput.click();
+        });
+
+        uploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', function() {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            var files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.name.match(/\.(xlsx|xls)$/i)) {
+                alert('Please select an Excel file (.xlsx or .xls)');
+                return;
+            }
+
+            currentFileName = file.name;
+            var reader = new FileReader();
+
+            reader.onload = function(e) {
+                try {
+                    var data = new Uint8Array(e.target.result);
+                    var workbook = XLSX.read(data, { type: 'array' });
+                    parseWorkbook(workbook);
+                } catch (error) {
+                    alert('Error reading Excel file: ' + error.message);
+                    console.error(error);
+                }
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+
+        function parseWorkbook(workbook) {
+            DASHBOARD_DATA = {};
+
+            // Parse Monthly Data sheet
+            var monthlySheet = workbook.Sheets['Monthly Data'];
+            if (!monthlySheet) {
+                alert('Error: "Monthly Data" sheet not found in workbook. Please use the template.');
+                return;
+            }
+
+            var monthlyData = XLSX.utils.sheet_to_json(monthlySheet);
+
+            // Parse Provider Data sheet
+            var providerSheet = workbook.Sheets['Provider Data'];
+            var providerData = providerSheet ? XLSX.utils.sheet_to_json(providerSheet) : [];
+
+            // Parse Practice Config sheet
+            var configSheet = workbook.Sheets['Practice Config'];
+            if (configSheet) {
+                var configData = XLSX.utils.sheet_to_json(configSheet);
+                configData.forEach(function(row) {
+                    if (row.Setting === 'Practice Name') PRACTICE_CONFIG.practiceName = row.Value || PRACTICE_CONFIG.practiceName;
+                    if (row.Setting === 'Logo Initials') PRACTICE_CONFIG.logoInitials = row.Value || PRACTICE_CONFIG.logoInitials;
+                    if (row.Setting === 'Logo URL') PRACTICE_CONFIG.logoUrl = row.Value || '';
+                });
+            }
+
+            // Process monthly data
+            monthlyData.forEach(function(row) {
+                if (!row.Month || !row.Year) return;
+
+                var monthKey = row.Month + ' ' + row.Year;
+
+                DASHBOARD_DATA[monthKey] = {
+                    consultationRevenue: parseNumber(row['Consultation Revenue']),
+                    treatmentRevenue: parseNumber(row['Treatment Revenue']),
+                    monthlyRevenueGoal: parseNumber(row['Monthly Revenue Goal']),
+                    insuranceReceivables: parseNumber(row['Insurance Receivables']),
+                    patientReceivables: parseNumber(row['Patient Receivables']),
+                    activePatients: parseNumber(row['Active Patients']),
+                    newPatientLeads: parseNumber(row['New Patient Leads']),
+                    scheduledFromLeads: parseNumber(row['Scheduled From Leads']),
+                    totalAppointments: parseNumber(row['Total Appointments']),
+                    noShows: parseNumber(row['No Shows']),
+                    noShowGoal: parseNumber(row['No Show Goal']),
+                    cancellations: parseNumber(row['Cancellations']),
+                    revenuePerVisitGoal: parseNumber(row['Revenue Per Visit Goal']),
+                    leadConversionGoal: parseNumber(row['Lead Conversion Goal']),
+                    providers: []
+                };
+            });
+
+            // Process provider data
+            providerData.forEach(function(row) {
+                if (!row.Month || !row.Year) return;
+
+                var monthKey = row.Month + ' ' + row.Year;
+
+                if (DASHBOARD_DATA[monthKey]) {
+                    DASHBOARD_DATA[monthKey].providers.push({
+                        name: row['Provider Name'] || '',
+                        role: row['Role'] || '',
+                        visits: parseNumber(row['Visits']),
+                        utilization: parseNumber(row['Utilization'])
+                    });
+                }
+            });
+
+            // Set selected month to most recent
+            var months = Object.keys(DASHBOARD_DATA).sort(function(a, b) {
+                return new Date(a) - new Date(b);
+            });
+
+            if (months.length === 0) {
+                alert('No valid data found in the Excel file. Please check the format.');
+                return;
+            }
+
+            selectedMonth = months[months.length - 1];
+
+            // Save data to localStorage
+            saveData();
+
+            // Show dashboard
+            document.getElementById('uploadSection').classList.add('compact');
+            document.getElementById('dashboardContent').style.display = 'block';
+
+            renderDashboard();
+        }
+
+        function parseNumber(value) {
+            if (value === undefined || value === null || value === '') return 0;
+            var num = parseFloat(String(value).replace(/[$,]/g, ''));
+            return isNaN(num) ? 0 : num;
+        }
+
+        function formatCurrency(value) {
+            if (value >= 1000) {
+                return '$' + (value / 1000).toFixed(value >= 10000 ? 0 : 1) + 'k';
+            }
+            return '$' + value;
+        }
+
+        function formatCurrencyFull(value) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(value);
+        }
+
+        function formatPercent(value) {
+            return value.toFixed(0) + '%';
+        }
+
+        function getMonthDateRange(monthYear) {
+            var parts = monthYear.split(' ');
+            var month = parts[0];
+            var year = parts[1];
+            var monthIndex = new Date(Date.parse(month + ' 1, ' + year)).getMonth();
+            var lastDay = new Date(year, monthIndex + 1, 0).getDate();
+            return month + ' 1 – ' + lastDay + ', ' + year;
+        }
+
+        function formatMonthDayYear(monthYear) {
+            var parts = monthYear.split(' ');
+            var month = parts[0];
+            var year = parts[1];
+            var monthIndex = new Date(Date.parse(month + ' 1, ' + year)).getMonth();
+            var lastDay = new Date(year, monthIndex + 1, 0).getDate();
+            return month + ' ' + lastDay + ', ' + year;
+        }
+
+        function getPreviousYearMonth(monthYear) {
+            var parts = monthYear.split(' ');
+            return parts[0] + ' ' + (parseInt(parts[1]) - 1);
+        }
+
+        function calculateChange(current, previous) {
+            if (!previous || previous === 0) return null;
+            return ((current - previous) / previous) * 100;
+        }
+
+        function renderDashboard() {
+            var data = DASHBOARD_DATA[selectedMonth];
+            if (!data) return;
+
+            var months = Object.keys(DASHBOARD_DATA).sort(function(a, b) {
+                return new Date(a) - new Date(b);
+            });
+            var prevYearMonth = getPreviousYearMonth(selectedMonth);
+            var prevYearData = DASHBOARD_DATA[prevYearMonth];
+
+            // Calculate totals
+            var currentTotal = data.consultationRevenue + data.treatmentRevenue;
+            var prevTotal = prevYearData ? prevYearData.consultationRevenue + prevYearData.treatmentRevenue : null;
+
+            // Calculate changes
+            var consultChange = prevYearData ? calculateChange(data.consultationRevenue, prevYearData.consultationRevenue) : null;
+            var treatChange = prevYearData ? calculateChange(data.treatmentRevenue, prevYearData.treatmentRevenue) : null;
+
+            // Receivables total
+            var totalReceivables = data.insuranceReceivables + data.patientReceivables;
+
+            var monthOptions = months.map(function(month) {
+                return '<option value="' + month + '"' + (month === selectedMonth ? ' selected' : '') + '>' + month + '</option>';
+            }).join('');
+
+            // Extract unique years for filter
+            var years = [];
+            months.forEach(function(m) {
+                var year = m.split(' ')[1];
+                if (years.indexOf(year) === -1) years.push(year);
+            });
+            years.sort();
+            var selectedYear = selectedMonth.split(' ')[1];
+            var yearOptions = '<option value="all">All Years</option>' + years.map(function(year) {
+                return '<option value="' + year + '"' + (year === selectedYear ? ' selected' : '') + '>' + year + '</option>';
+            }).join('');
+
+            // Extract unique providers for filter
+            var allProviders = [];
+            Object.keys(DASHBOARD_DATA).forEach(function(m) {
+                var d = DASHBOARD_DATA[m];
+                if (d.providers) {
+                    d.providers.forEach(function(p) {
+                        if (allProviders.indexOf(p.name) === -1) allProviders.push(p.name);
+                    });
+                }
+            });
+            allProviders.sort();
+            var providerOptions = '<option value="all">All Providers</option>' + allProviders.map(function(name) {
+                return '<option value="' + name + '">' + name + '</option>';
+            }).join('');
+
+            function changeBadge(change, suffix, currentValue, previousValue, label) {
+                if (change === null) return '';
+                var isUp = change >= 0;
+                var dollarDiff = currentValue - previousValue;
+                var labelText = label || '';
+                var tooltipText = labelText + (labelText ? ': ' : '') +
+                    (isUp ? '+' + formatCurrencyFull(dollarDiff) : formatCurrencyFull(dollarDiff)) +
+                    ' (' + (isUp ? '+' : '') + change.toFixed(0) + '% vs same month last year)';
+                return '<div class="change-badge ' + (isUp ? 'up' : 'down') + '">' +
+                    '<span class="tooltip">' + tooltipText + '</span>' +
+                    '<span class="change-arrow">' + (isUp ? '▲' : '▼') + '</span>' +
+                    Math.abs(change).toFixed(0) + (suffix || '%') +
+                '</div>';
+            }
+
+            var dashboardContent = document.getElementById('dashboardContent');
+            dashboardContent.innerHTML =
+                '<div class="dashboard-banner">' +
+                    (PRACTICE_CONFIG.logoUrl ? '<img src="' + PRACTICE_CONFIG.logoUrl + '" alt="' + PRACTICE_CONFIG.practiceName + '" class="dashboard-banner-logo">' : '') +
+                    '<div class="dashboard-banner-title">Practice Performance Dashboard</div>' +
+                '</div>' +
+                '<header class="header">' +
+                    '<div class="header-left">' +
+                        '<span class="last-updated">Data: ' + currentFileName + '</span>' +
+                    '</div>' +
+                    '<div class="header-center">' +
+                        '<div class="period-toggle">' +
+                            '<button class="period-btn' + (viewMode === 'monthly' ? ' active' : '') + '" id="monthlyBtn">Monthly</button>' +
+                            '<button class="period-btn' + (viewMode === 'yearly' ? ' active' : '') + '" id="yearlyBtn">Yearly</button>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="header-right">' +
+                        '<div class="header-filters">' +
+                            '<div class="filter-group">' +
+                                '<label class="filter-label">Year</label>' +
+                                '<select class="filter-select" id="yearFilter">' + yearOptions + '</select>' +
+                            '</div>' +
+                            '<div class="filter-group">' +
+                                '<label class="filter-label">Provider</label>' +
+                                '<select class="filter-select" id="providerFilter">' + providerOptions + '</select>' +
+                            '</div>' +
+                        '</div>' +
+                        '<select class="month-select" id="monthSelect">' + monthOptions + '</select>' +
+                        (EXCEL_DATA_URL ? '<button class="load-new-btn" id="refreshData" style="border-color:var(--secondary);color:var(--secondary);">&#8635; Refresh Data</button>' : '') +
+                        '<button class="load-new-btn" id="loadNewFile">' + (EXCEL_DATA_URL ? 'Upload Different File' : 'Load New File') + '</button>' +
+                    '</div>' +
+                '</header>' +
+
+                '<div class="main-content">' +
+                    '<div class="left-column">' +
+                        '<!-- Month to Date Revenue -->' +
+                        '<div class="card">' +
+                            '<div class="card-header">Month to Date Revenue</div>' +
+                            '<div class="revenue-comparison">' +
+                                (prevYearData ?
+                                '<div class="revenue-period previous">' +
+                                    '<div class="period-label">' + getMonthDateRange(prevYearMonth) + '</div>' +
+                                    '<div class="donut-container">' +
+                                        '<canvas id="prevDonut" class="donut-canvas" width="180" height="180"></canvas>' +
+                                    '</div>' +
+                                    '<div class="donut-labels">' +
+                                        '<div class="donut-label-item"><span class="donut-label-dot" style="background:#3F51B5"></span>Consult ' + formatCurrency(prevYearData.consultationRevenue) + '</div>' +
+                                        '<div class="donut-label-item"><span class="donut-label-dot" style="background:#8BC34A"></span>Treatment ' + formatCurrency(prevYearData.treatmentRevenue) + '</div>' +
+                                    '</div>' +
+                                    '<div class="mtd-total">MTD = <strong>' + formatCurrency(prevTotal) + '</strong></div>' +
+                                '</div>' : '<div class="revenue-period previous" style="display:flex;align-items:center;justify-content:center;"><div style="opacity:0.7">No previous year data</div></div>') +
+
+                                '<div class="revenue-period current">' +
+                                    '<div class="period-label">' + getMonthDateRange(selectedMonth) + '</div>' +
+                                    '<div class="donut-container">' +
+                                        '<canvas id="currentDonut" class="donut-canvas" width="180" height="180"></canvas>' +
+                                    '</div>' +
+                                    '<div class="change-indicator">' +
+                                        (consultChange !== null ? changeBadge(consultChange, '%', data.consultationRevenue, prevYearData ? prevYearData.consultationRevenue : 0, 'Consult Revenue') : '') +
+                                        (treatChange !== null ? changeBadge(treatChange, '%', data.treatmentRevenue, prevYearData ? prevYearData.treatmentRevenue : 0, 'Treatment Revenue') : '') +
+                                    '</div>' +
+                                    '<div class="donut-labels">' +
+                                        '<div class="donut-label-item"><span class="donut-label-dot" style="background:#3F51B5"></span>Consult ' + formatCurrency(data.consultationRevenue) + '</div>' +
+                                        '<div class="donut-label-item"><span class="donut-label-dot" style="background:#8BC34A"></span>Treatment ' + formatCurrency(data.treatmentRevenue) + '</div>' +
+                                    '</div>' +
+                                    '<div class="mtd-total">MTD = <strong>' + formatCurrency(currentTotal) + '</strong></div>' +
+                                '</div>' +
+                            '</div>' +
+                        '</div>' +
+
+                        '<!-- Metrics Grid -->' +
+                        '<div class="metrics-grid">' +
+                            '<div class="metric-card" id="rpvCard">' +
+                                '<div class="metric-title">Revenue per Visit</div>' +
+                                '<div class="metric-chart"><canvas id="revenuePerVisitChart"></canvas></div>' +
+                                '<div class="click-hint">Click for details</div>' +
+                            '</div>' +
+                            '<div class="metric-card" id="lcCard">' +
+                                '<div class="metric-title">Lead Conversion Rate</div>' +
+                                '<div class="metric-chart"><canvas id="leadConversionChart"></canvas></div>' +
+                                '<div class="click-hint">Click for details</div>' +
+                            '</div>' +
+                            '<div class="metric-card" id="apptCard">' +
+                                '<div class="metric-title">Appointments</div>' +
+                                '<div class="metric-chart"><canvas id="appointmentsChart"></canvas></div>' +
+                                '<div class="click-hint">Click for details</div>' +
+                            '</div>' +
+                            '<div class="metric-card" id="nsCard">' +
+                                '<div class="metric-title">No Shows & Cancellations</div>' +
+                                '<div class="metric-chart"><canvas id="noShowChart"></canvas></div>' +
+                                '<div class="click-hint">Click for details</div>' +
+                            '</div>' +
+                        '</div>' +
+
+                        '<!-- Provider Visits Chart -->' +
+                        '<div class="card clickable-card" style="margin-top:20px" id="providerCard">' +
+                            '<div class="card-header">Visits by Provider <span style="font-size:11px;font-weight:normal;opacity:0.7">(Click for details)</span></div>' +
+                            '<div class="card-body">' +
+                                '<div class="provider-chart"><canvas id="providerChart"></canvas></div>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>' +
+
+                    '<div class="right-column">' +
+                        '<!-- Outstanding Receivables -->' +
+                        '<div class="card clickable-card" id="receivablesCard">' +
+                            '<div class="card-header">Outstanding Receivables <span style="font-size:11px;font-weight:normal;opacity:0.7">(Click for details)</span></div>' +
+                            '<div class="card-body">' +
+                                '<div class="period-label" style="background:var(--primary);color:white;display:inline-block;padding:6px 16px;border-radius:4px;font-size:13px;margin-bottom:16px;">' + formatMonthDayYear(selectedMonth) + '</div>' +
+                                '<div class="receivables-donut">' +
+                                    '<canvas id="receivablesDonut" width="200" height="200"></canvas>' +
+                                    '<div class="receivables-center" style="font-size:12px;color:#666;pointer-events:none;"></div>' +
+                                '</div>' +
+                                '<div class="receivables-legend">' +
+                                    '<div class="legend-item">' +
+                                        '<div class="legend-icon insurance">&#127973;</div>' +
+                                        '<div>Insurance<br><strong>' + formatCurrency(data.insuranceReceivables) + '</strong></div>' +
+                                    '</div>' +
+                                    '<div class="legend-item">' +
+                                        '<div class="legend-icon patient">&#128100;</div>' +
+                                        '<div>Patient<br><strong>' + formatCurrency(data.patientReceivables) + '</strong></div>' +
+                                    '</div>' +
+                                '</div>' +
+                                '<div class="receivables-total">Total = <strong>' + formatCurrency(totalReceivables) + '</strong></div>' +
+                            '</div>' +
+                        '</div>' +
+
+                        '<!-- Monthly Trend -->' +
+                        '<div class="card">' +
+                            '<div class="card-header">Revenue Trend (' + selectedMonth.split(' ')[1] + ')</div>' +
+                            '<div class="card-body">' +
+                                '<div class="trend-tabs">' +
+                                    '<button class="trend-tab' + (trendFilter === 'all' ? ' active' : '') + '" id="trendAll">All Revenue</button>' +
+                                    '<button class="trend-tab' + (trendFilter === 'consult' ? ' active' : '') + '" id="trendConsult">Consult</button>' +
+                                    '<button class="trend-tab' + (trendFilter === 'treatment' ? ' active' : '') + '" id="trendTreatment">Treatment</button>' +
+                                '</div>' +
+                                '<div class="trend-chart"><canvas id="trendChart"></canvas></div>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>' +
+
+                '<footer class="footer">' +
+                    PRACTICE_CONFIG.practiceName + ' • Practice Performance Dashboard • Data loaded from Excel workbook' +
+                '</footer>';
+
+            // Event listeners
+            document.getElementById('monthSelect').addEventListener('change', function(e) {
+                selectedMonth = e.target.value;
+                saveData(); // Save selected month
+                renderDashboard();
+            });
+
+            document.getElementById('yearFilter').addEventListener('change', function(e) {
+                var filterYear = e.target.value;
+                var months = Object.keys(DASHBOARD_DATA).sort(function(a, b) {
+                    return new Date(a) - new Date(b);
+                });
+
+                if (filterYear === 'all') {
+                    // Show most recent month
+                    selectedMonth = months[months.length - 1];
+                } else {
+                    // Find most recent month in the selected year
+                    var yearMonths = months.filter(function(m) {
+                        return m.split(' ')[1] === filterYear;
+                    });
+                    if (yearMonths.length > 0) {
+                        selectedMonth = yearMonths[yearMonths.length - 1];
+                    }
+                }
+                saveData();
+                renderDashboard();
+            });
+
+            document.getElementById('providerFilter').addEventListener('change', function(e) {
+                var selectedProvider = e.target.value;
+                if (selectedProvider !== 'all') {
+                    // Open drilldown for the selected provider
+                    showProviderDrilldown(selectedProvider);
+                }
+                // Reset to "All Providers" after showing drilldown
+                e.target.value = 'all';
+            });
+
+            document.getElementById('loadNewFile').addEventListener('click', function() {
+                clearSavedData();
+            });
+
+            // Refresh data from SharePoint URL
+            var refreshBtn = document.getElementById('refreshData');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', function() {
+                    if (EXCEL_DATA_URL) {
+                        // Clear saved data and reload from URL
+                        try {
+                            localStorage.removeItem('dashboardData');
+                            localStorage.removeItem('practiceConfig');
+                            localStorage.removeItem('fileName');
+                            localStorage.removeItem('selectedMonth');
+                        } catch(e) {}
+                        loadExcelFromUrl(EXCEL_DATA_URL);
+                    }
+                });
+            }
+
+            // Drilldown click handlers
+            document.getElementById('rpvCard').addEventListener('click', showRevenuePerVisitDrilldown);
+            document.getElementById('lcCard').addEventListener('click', showLeadConversionDrilldown);
+            document.getElementById('apptCard').addEventListener('click', showAppointmentsDrilldown);
+            document.getElementById('nsCard').addEventListener('click', showNoShowsDrilldown);
+            document.getElementById('providerCard').addEventListener('click', showProviderDrilldown);
+            document.getElementById('receivablesCard').addEventListener('click', showReceivablesDrilldown);
+
+            document.getElementById('monthlyBtn').addEventListener('click', function() {
+                if (viewMode !== 'monthly') {
+                    viewMode = 'monthly';
+                    renderDashboard();
+                }
+            });
+            document.getElementById('yearlyBtn').addEventListener('click', function() {
+                if (viewMode !== 'yearly') {
+                    viewMode = 'yearly';
+                    renderDashboard();
+                }
+            });
+
+            document.getElementById('trendAll').addEventListener('click', function() {
+                if (trendFilter !== 'all') {
+                    trendFilter = 'all';
+                    updateTrendChart();
+                }
+            });
+            document.getElementById('trendConsult').addEventListener('click', function() {
+                if (trendFilter !== 'consult') {
+                    trendFilter = 'consult';
+                    updateTrendChart();
+                }
+            });
+            document.getElementById('trendTreatment').addEventListener('click', function() {
+                if (trendFilter !== 'treatment') {
+                    trendFilter = 'treatment';
+                    updateTrendChart();
+                }
+            });
+
+            setTimeout(function() {
+                drawAllCharts(data, prevYearData);
+            }, 50);
+        }
+
+        function drawAllCharts(data, prevYearData) {
+            Object.keys(charts).forEach(function(key) {
+                if (charts[key]) charts[key].destroy();
+            });
+
+            // Previous year donut
+            if (prevYearData) {
+                var prevDonutCtx = document.getElementById('prevDonut');
+                if (prevDonutCtx) {
+                    charts.prevDonut = new Chart(prevDonutCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Consultation', 'Treatment'],
+                            datasets: [{
+                                data: [prevYearData.consultationRevenue, prevYearData.treatmentRevenue],
+                                backgroundColor: ['#3F51B5', '#8BC34A'],
+                                borderColor: 'white',
+                                borderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            cutout: '65%',
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            var value = context.raw;
+                                            var total = context.dataset.data.reduce(function(a, b) { return a + b; }, 0);
+                                            var percentage = ((value / total) * 100).toFixed(1);
+                                            return context.label + ': ' + formatCurrencyFull(value) + ' (' + percentage + '%)';
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+
+            // Current year donut
+            var currentDonutCtx = document.getElementById('currentDonut');
+            if (currentDonutCtx) {
+                charts.currentDonut = new Chart(currentDonutCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Consultation', 'Treatment'],
+                        datasets: [{
+                            data: [data.consultationRevenue, data.treatmentRevenue],
+                            backgroundColor: ['#3F51B5', '#8BC34A'],
+                            borderColor: 'white',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        cutout: '65%',
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        var value = context.raw;
+                                        var total = context.dataset.data.reduce(function(a, b) { return a + b; }, 0);
+                                        var percentage = ((value / total) * 100).toFixed(1);
+                                        return context.label + ': ' + formatCurrencyFull(value) + ' (' + percentage + '%)';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Receivables donut
+            var receivablesCtx = document.getElementById('receivablesDonut');
+            if (receivablesCtx) {
+                charts.receivables = new Chart(receivablesCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Insurance', 'Patient'],
+                        datasets: [{
+                            data: [data.insuranceReceivables, data.patientReceivables],
+                            backgroundColor: ['#3F51B5', '#8BC34A'],
+                            borderColor: 'white',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        cutout: '65%',
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        var value = context.raw;
+                                        var total = context.dataset.data.reduce(function(a, b) { return a + b; }, 0);
+                                        var percentage = ((value / total) * 100).toFixed(1);
+                                        return context.label + ': ' + formatCurrencyFull(value) + ' (' + percentage + '%)';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Revenue per Visit chart
+            var rpvCtx = document.getElementById('revenuePerVisitChart');
+            if (rpvCtx) {
+                var rpvCurrent = Math.round((data.consultationRevenue + data.treatmentRevenue) / data.totalAppointments * 100) / 100;
+                var rpvPrev = prevYearData ? Math.round((prevYearData.consultationRevenue + prevYearData.treatmentRevenue) / prevYearData.totalAppointments * 100) / 100 : 0;
+
+                charts.rpv = new Chart(rpvCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: prevYearData ? ['Previous', 'Current'] : ['Current'],
+                        datasets: [{
+                            data: prevYearData ? [rpvPrev, rpvCurrent] : [rpvCurrent],
+                            backgroundColor: prevYearData ? ['#8BC34A', '#3F51B5'] : ['#3F51B5'],
+                            borderRadius: 4,
+                            barThickness: 40
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return '$' + context.raw.toFixed(2);
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: Math.max(rpvCurrent, rpvPrev || 0, data.revenuePerVisitGoal || 200) * 1.2,
+                                grid: { display: false },
+                                ticks: {
+                                    callback: function(v) { return '$' + v.toFixed(0); },
+                                    font: { size: 10 }
+                                }
+                            },
+                            x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                        }
+                    }
+                });
+            }
+
+            // Lead Conversion chart
+            var lcCtx = document.getElementById('leadConversionChart');
+            if (lcCtx) {
+                var lcCurrent = data.newPatientLeads > 0 ? (data.scheduledFromLeads / data.newPatientLeads) * 100 : 0;
+                var lcPrev = prevYearData && prevYearData.newPatientLeads > 0 ? (prevYearData.scheduledFromLeads / prevYearData.newPatientLeads) * 100 : 0;
+
+                charts.lc = new Chart(lcCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: prevYearData ? ['Previous', 'Current'] : ['Current'],
+                        datasets: [{
+                            data: prevYearData ? [lcPrev, lcCurrent] : [lcCurrent],
+                            backgroundColor: prevYearData ? ['#8BC34A', '#3F51B5'] : ['#3F51B5'],
+                            borderRadius: 4,
+                            barThickness: 40
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.raw.toFixed(1) + '%';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                grid: { display: false },
+                                ticks: {
+                                    callback: function(v) { return v + '%'; },
+                                    font: { size: 10 }
+                                }
+                            },
+                            x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                        }
+                    }
+                });
+            }
+
+            // Appointments chart
+            var apptCtx = document.getElementById('appointmentsChart');
+            if (apptCtx) {
+                charts.appt = new Chart(apptCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Leads', 'Scheduled', 'Completed'],
+                        datasets: [{
+                            data: [data.newPatientLeads, data.scheduledFromLeads, data.totalAppointments - data.noShows - data.cancellations],
+                            backgroundColor: ['#8BC34A', '#3F51B5', '#689F38'],
+                            borderRadius: 4,
+                            barThickness: 28
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { display: false },
+                                ticks: { font: { size: 10 } }
+                            },
+                            x: { grid: { display: false }, ticks: { font: { size: 9 } } }
+                        }
+                    }
+                });
+            }
+
+            // No Show chart
+            var nsCtx = document.getElementById('noShowChart');
+            if (nsCtx) {
+                charts.ns = new Chart(nsCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['No Shows', 'Cancellations'],
+                        datasets: [{
+                            data: [data.noShows, data.cancellations],
+                            backgroundColor: ['#E53935', '#E8A35D'],
+                            borderRadius: 4,
+                            barThickness: 35
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { display: false },
+                                ticks: { font: { size: 10 } }
+                            },
+                            x: { grid: { display: false }, ticks: { font: { size: 9 } } }
+                        }
+                    }
+                });
+            }
+
+            // Provider Visits chart
+            var provCtx = document.getElementById('providerChart');
+            if (provCtx && data.providers && data.providers.length > 0) {
+                var providerNames = data.providers.map(function(p) {
+                    var parts = p.name.split(' ');
+                    return parts[parts.length - 1];
+                });
+                var providerVisits = data.providers.map(function(p) { return p.visits; });
+                var prevProviderVisits = prevYearData && prevYearData.providers ? prevYearData.providers.map(function(p) { return p.visits; }) : null;
+
+                var datasets = [{
+                    label: 'Current',
+                    data: providerVisits,
+                    backgroundColor: '#3F51B5',
+                    borderRadius: 4,
+                    barThickness: 24
+                }];
+
+                if (prevProviderVisits && prevProviderVisits.length > 0) {
+                    datasets.unshift({
+                        label: 'Previous Year',
+                        data: prevProviderVisits,
+                        backgroundColor: '#8BC34A',
+                        borderRadius: 4,
+                        barThickness: 24
+                    });
+                }
+
+                var fullProviderNames = data.providers.map(function(p) { return p.name; });
+                charts.provider = new Chart(provCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: providerNames,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        onClick: function(evt, elements) {
+                            if (elements.length > 0) {
+                                var index = elements[0].index;
+                                var clickedProviderName = fullProviderNames[index];
+                                showProviderDrilldown(clickedProviderName);
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: prevProviderVisits && prevProviderVisits.length > 0,
+                                position: 'top',
+                                labels: { font: { size: 11 }, usePointStyle: true }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.dataset.label + ': ' + context.raw + ' visits';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: '#E0E0E0' },
+                                ticks: {
+                                    font: { size: 11 }
+                                }
+                            },
+                            x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+                        }
+                    }
+                });
+            }
+
+            // Trend chart
+            var trendCtx = document.getElementById('trendChart');
+            if (trendCtx) {
+                var months = Object.keys(DASHBOARD_DATA).sort(function(a, b) {
+                    return new Date(a) - new Date(b);
+                });
+                var currentYear = selectedMonth.split(' ')[1];
+
+                var filteredMonths = months.filter(function(m) {
+                    return m.split(' ')[1] === currentYear;
+                });
+
+                var trendLabels = filteredMonths.map(function(m) { return m.split(' ')[0].slice(0, 3); });
+                var trendData = filteredMonths.map(function(m) {
+                    var d = DASHBOARD_DATA[m];
+                    if (trendFilter === 'consult') {
+                        return d.consultationRevenue / 1000;
+                    } else if (trendFilter === 'treatment') {
+                        return d.treatmentRevenue / 1000;
+                    }
+                    return (d.consultationRevenue + d.treatmentRevenue) / 1000;
+                });
+
+                var color = trendFilter === 'consult' ? '#3F51B5' :
+                           trendFilter === 'treatment' ? '#8BC34A' : '#3F51B5';
+
+                charts.trend = new Chart(trendCtx, {
+                    type: 'line',
+                    data: {
+                        labels: trendLabels,
+                        datasets: [{
+                            data: trendData,
+                            borderColor: color,
+                            backgroundColor: 'rgba(61, 122, 153, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 4,
+                            pointBackgroundColor: color
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                grid: { color: '#E0E0E0' },
+                                ticks: {
+                                    callback: function(v) { return '$' + v + 'k'; },
+                                    font: { size: 10 }
+                                }
+                            },
+                            x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                        }
+                    }
+                });
+            }
+        }
+
+        function updateTrendChart() {
+            document.querySelectorAll('.trend-tab').forEach(function(tab) {
+                tab.classList.remove('active');
+            });
+            var tabId = 'trend' + trendFilter.charAt(0).toUpperCase() + trendFilter.slice(1);
+            document.getElementById(tabId).classList.add('active');
+
+            if (charts.trend) {
+                var months = Object.keys(DASHBOARD_DATA).sort(function(a, b) {
+                    return new Date(a) - new Date(b);
+                });
+                var selectedYear = selectedMonth.split(' ')[1];
+
+                var filteredMonths = months.filter(function(m) {
+                    return m.split(' ')[1] === selectedYear;
+                });
+
+                var trendLabels = filteredMonths.map(function(m) { return m.split(' ')[0].slice(0, 3); });
+                var trendData = filteredMonths.map(function(m) {
+                    var d = DASHBOARD_DATA[m];
+                    if (trendFilter === 'consult') {
+                        return d.consultationRevenue / 1000;
+                    } else if (trendFilter === 'treatment') {
+                        return d.treatmentRevenue / 1000;
+                    }
+                    return (d.consultationRevenue + d.treatmentRevenue) / 1000;
+                });
+
+                var color = trendFilter === 'consult' ? '#3F51B5' :
+                           trendFilter === 'treatment' ? '#8BC34A' : '#3F51B5';
+
+                charts.trend.data.labels = trendLabels;
+                charts.trend.data.datasets[0].data = trendData;
+                charts.trend.data.datasets[0].borderColor = color;
+                charts.trend.data.datasets[0].pointBackgroundColor = color;
+                charts.trend.update();
+            }
+        }
+    </script>
+</body>
+</html>
