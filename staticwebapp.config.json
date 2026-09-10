@@ -1,0 +1,28 @@
+{
+  "routes": [
+    {
+      "route": "/",
+      "rewrite": "/teams-call-quality-dashboard.html"
+    }
+  ],
+  "navigationFallback": {
+    "rewrite": "/teams-call-quality-dashboard.html",
+    "exclude": ["/*.{css,scss,js,png,gif,ico,jpg,svg,csv,woff2}"]
+  },
+  "responseOverrides": {
+    "404": {
+      "rewrite": "/teams-call-quality-dashboard.html",
+      "statusCode": 200
+    }
+  },
+  "globalHeaders": {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "SAMEORIGIN",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Permissions-Policy": "geolocation=(), microphone=(), camera=()"
+  },
+  "mimeTypes": {
+    ".json": "application/json",
+    ".csv": "text/csv"
+  }
+}
